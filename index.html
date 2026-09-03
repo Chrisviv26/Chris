@@ -9,7 +9,8 @@
 <meta name="apple-mobile-web-app-title" content="Cash">
 <meta name="theme-color" content="#0f172a">
 <link id="touchIcon" rel="apple-touch-icon">
-<title>Cash · auto-sync</title>
+<link id="manifest" rel="manifest">
+<title>Cash</title>
 <style>
   :root{--ink:#0f172a;--slate:#475569;--muted:#94a3b8;--line:#e2e8f0;--paper:#f6f7f9;
     --card:#fff;--green:#059669;--rose:#e11d48;--amber:#b45309;--accent:#4f46e5;}
@@ -19,22 +20,18 @@
     background:var(--paper);color:var(--ink);padding-bottom:env(safe-area-inset-bottom);-webkit-font-smoothing:antialiased;}
   .wrap{max-width:520px;margin:0 auto;}
   header{background:linear-gradient(160deg,#0f172a,#1e293b);color:#fff;
-    padding:calc(env(safe-area-inset-top) + 16px) 20px 18px;border-radius:0 0 22px 22px;
+    padding:calc(env(safe-area-inset-top) + 18px) 20px 20px;border-radius:0 0 22px 22px;
     position:sticky;top:0;z-index:20;box-shadow:0 6px 20px rgba(15,23,42,.18);}
-  .authbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-size:12px;}
-  .authbar .who{color:#cbd5e1;display:flex;align-items:center;gap:6px;min-width:0;}
-  .authbar .who b{color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;}
-  .authbar button{background:rgba(255,255,255,.14);color:#fff;border:none;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;}
-  .dotst{width:8px;height:8px;border-radius:50%;flex:none;background:#64748b;}
-  .dotst.ok{background:#34d399;}.dotst.off{background:#fbbf24;}
   .month-row{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:14px;}
   .month-row button{background:rgba(255,255,255,.12);color:#fff;border:none;width:34px;height:34px;border-radius:10px;font-size:18px;line-height:1;}
-  .month-row .m{font-size:15px;font-weight:600;min-width:120px;text-align:center;}
+  .month-row .m{font-size:15px;font-weight:600;letter-spacing:.2px;min-width:120px;text-align:center;}
   .stats{display:flex;gap:10px;}
   .stat{flex:1;background:rgba(255,255,255,.08);border-radius:14px;padding:11px 12px;}
   .stat .k{font-size:11px;color:#cbd5e1;text-transform:uppercase;letter-spacing:.5px;}
   .stat .v{font-size:19px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums;}
   .v.in{color:#6ee7b7;}.v.out{color:#fda4af;}.v.save{color:#fff;}
+  #installChip{display:none;margin:12px auto 0;background:#fff;color:#0f172a;border:none;
+    padding:8px 14px;border-radius:999px;font-size:13px;font-weight:700;}
   main{padding:16px;}
   .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 1px 2px rgba(15,23,42,.04);}
   .amount-wrap{display:flex;align-items:center;border-bottom:2px solid var(--line);padding:4px 2px 8px;}
@@ -49,7 +46,7 @@
   .field input,.field select{width:100%;border:1px solid var(--line);border-radius:12px;padding:13px 14px;font-size:16px;color:var(--ink);background:#fff;outline:none;}
   .field input:focus,.field select:focus{border-color:var(--accent);}
   .cat-hint{font-size:11px;color:var(--muted);margin-left:6px;font-weight:400;text-transform:none;letter-spacing:0;}
-  .add-btn{width:100%;margin-top:16px;background:var(--ink);color:#fff;border:none;padding:16px;border-radius:14px;font-size:16px;font-weight:700;}
+  .add-btn{width:100%;margin-top:16px;background:var(--ink);color:#fff;border:none;padding:16px;border-radius:14px;font-size:16px;font-weight:700;letter-spacing:.2px;}
   .add-btn:active{transform:translateY(1px);}
   .list-head{display:flex;align-items:center;justify-content:space-between;margin:22px 4px 8px;}
   .list-head h2{font-size:14px;color:var(--slate);margin:0;font-weight:700;}
@@ -72,73 +69,64 @@
   .toast{position:fixed;left:50%;bottom:88px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 18px;border-radius:12px;font-size:13px;opacity:0;transition:opacity .25s;z-index:50;max-width:90%;text-align:center;}
   .toast.show{opacity:1;}
   .tiny{font-size:11px;color:var(--muted);text-align:center;padding:6px 16px 2px;}
-  .warn{margin:12px 16px 0;background:#fef3c7;border:1px solid #fde68a;color:#92400e;font-size:12px;padding:10px 12px;border-radius:12px;}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="authbar">
-      <span class="who"><span class="dotst" id="syncDot"></span><span id="whoTxt">Not signed in</span></span>
-      <button id="authBtn">Sign in</button>
-    </div>
     <div class="month-row">
-      <button id="prevM">‹</button><div class="m" id="monthLabel">—</div><button id="nextM">›</button>
+      <button id="prevM" aria-label="Previous month">‹</button>
+      <div class="m" id="monthLabel">—</div>
+      <button id="nextM" aria-label="Next month">›</button>
     </div>
     <div class="stats">
       <div class="stat"><div class="k">In</div><div class="v in" id="sumIn">$0</div></div>
       <div class="stat"><div class="k">Out</div><div class="v out" id="sumOut">$0</div></div>
       <div class="stat"><div class="k">Saved</div><div class="v save" id="sumNet">$0</div></div>
     </div>
+    <button id="installChip">⤓ Install app</button>
   </header>
-
-  <div id="cfgWarn" class="warn" style="display:none"></div>
 
   <main>
     <div class="card">
       <div class="amount-wrap"><span>$</span><input id="amount" type="number" inputmode="decimal" placeholder="0.00" step="0.01"></div>
-      <div class="seg"><button id="segOut" class="on-out">Spent</button><button id="segIn">Money in</button></div>
+      <div class="seg">
+        <button id="segOut" class="on-out">Spent</button>
+        <button id="segIn">Money in</button>
+      </div>
       <div class="field"><label>What was it?</label>
         <input id="desc" type="text" placeholder="e.g. New World, Z petrol, AT HOP" autocomplete="off"></div>
-      <div class="field"><label>Category <span class="cat-hint" id="catHint">auto</span></label><select id="category"></select></div>
+      <div class="field"><label>Category <span class="cat-hint" id="catHint">auto</span></label>
+        <select id="category"></select></div>
       <div class="field"><label>Date</label><input id="date" type="date"></div>
       <button class="add-btn" id="addBtn">Add</button>
     </div>
+
     <div class="list-head"><h2>Entries this month</h2><span class="tiny" id="count"></span></div>
     <div id="list"></div>
   </main>
 
   <div class="export">
-    <button id="syncBtn" class="primary">Sync now<span class="badge" id="newBadge" style="display:none">0</span></button>
+    <button id="sendBtn" class="primary">Send to laptop<span class="badge" id="newBadge" style="display:none">0</span></button>
+    <button id="copyBtn">Copy for Excel</button>
     <button id="moreBtn">•••</button>
   </div>
-  <div class="tiny" id="footNote">Entries save on your phone instantly, then sync to your OneDrive Excel.</div>
+  <div class="tiny">Everything is saved on this phone. Weekly: tap <b>Send to laptop</b>, then paste into the Excel <b>Add</b> tab.</div>
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.7.1/lib/msal-browser.min.js"></script>
 <script>
 "use strict";
-/* ============================================================
-   EDIT THESE TWO LINES after you register the app (steps provided)
-   ============================================================ */
-var CONFIG = {
-  clientId: "cfe6ab7e-3e3c-4d40-895a-41fbcd2cfa11",          // from your Microsoft app registration
-  filePath: "/Cashflow_Tracker.xlsx",             // path in your OneDrive (e.g. "/Budget/Cashflow_Tracker.xlsx")
-  authority: "https://login.microsoftonline.com/consumers",  // personal Microsoft accounts
-  table: "Entries"
-};
-/* ============================================================ */
-
 var KEY="cashsync:v1";
 function load(){try{var s=localStorage.getItem(KEY);return s?JSON.parse(s):[];}catch(e){return window.__mem||[];}}
-function saveLS(){try{localStorage.setItem(KEY,JSON.stringify(entries));}catch(e){window.__mem=entries;}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(entries));}catch(e){window.__mem=entries;}}
 
 var CATS=["Home","Groceries","Dining Out","Fuel","Transport","Utilities","Internet & Streaming",
   "Insurance","Health","Personal","Gifts","Subscriptions","Household","Clothing","Travel","Debt","Other"];
 var COLORS={Home:"#4f46e5",Groceries:"#0d9488","Dining Out":"#db2777",Fuel:"#ea580c",Transport:"#d97706",
   Utilities:"#0891b2","Internet & Streaming":"#7c3aed",Insurance:"#2563eb",Health:"#dc2626",Personal:"#c026d3",
-  Gifts:"#e11d48",Subscriptions:"#9333ea",Household:"#65a30d",Clothing:"#059669",Travel:"#0284c7",Debt:"#b91c1c",Income:"#059669",Other:"#64748b"};
+  Gifts:"#e11d48",Subscriptions:"#9333ea",Household:"#65a30d",Clothing:"#059669",Travel:"#0284c7",Debt:"#b91c1c",
+  Income:"#059669",Other:"#64748b"};
 var RULES=[
   ["Home",["rent","mortgage","landlord","body corp"," rates","property manag"]],
   ["Utilities",["power","electric","genesis","mercury","contact energy","meridian","watercare","gas bill","nova energy","electric kiwi"]],
@@ -157,24 +145,28 @@ var RULES=[
   ["Travel",["flight","air nz","jetstar","hotel","airbnb","booking.com","vacation","holiday","expedia"]],
   ["Debt",[" loan","credit card","repayment","afterpay","laybuy"," zip ","gem visa","q card"," interest"]]
 ];
-function guess(desc){var d=" "+(desc||"").toLowerCase()+" ",h="Other";
-  for(var i=0;i<RULES.length;i++)for(var j=0;j<RULES[i][1].length;j++)if(d.indexOf(RULES[i][1][j])>=0)h=RULES[i][0];return h;}
+function guess(desc){var d=" "+(desc||"").toLowerCase()+" ",hit="Other";
+  for(var i=0;i<RULES.length;i++)for(var j=0;j<RULES[i][1].length;j++)if(d.indexOf(RULES[i][1][j])>=0)hit=RULES[i][0];
+  return hit;}
 
-var entries=load(),view=new Date(),catTouched=false,kind="expense";
-view.setDate(1);
+var entries=load();
+var view=new Date();view.setDate(1);
+var catTouched=false;
 function fmt(n){return "$"+Math.round(n).toLocaleString("en-NZ");}
 function fmt2(n){return "$"+Number(n).toLocaleString("en-NZ",{minimumFractionDigits:2,maximumFractionDigits:2});}
 function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function monthKey(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");}
-function serial(dateStr){var d=new Date(dateStr+"T00:00:00Z");return Math.round((d.getTime()-Date.UTC(1899,11,30))/86400000);}
 var MO=["January","February","March","April","May","June","July","August","September","October","November","December"];
 var WD=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 var $=function(id){return document.getElementById(id);};
 var amountEl=$("amount"),descEl=$("desc"),catEl=$("category"),dateEl=$("date");
+var kind="expense";
 CATS.forEach(function(c){var o=document.createElement("option");o.value=c;o.textContent=c;catEl.appendChild(o);});
 dateEl.value=iso(new Date());
 
-function setKind(k){kind=k;$("segOut").className=k==="expense"?"on-out":"";$("segIn").className=k==="income"?"on-in":"";
+function setKind(k){kind=k;
+  $("segOut").className=k==="expense"?"on-out":"";
+  $("segIn").className=k==="income"?"on-in":"";
   if(k==="income"&&!catTouched)catEl.value="Income";else if(!catTouched)catEl.value=guess(descEl.value);}
 $("segOut").onclick=function(){setKind("expense");};
 $("segIn").onclick=function(){setKind("income");};
@@ -184,135 +176,144 @@ catEl.addEventListener("change",function(){catTouched=true;$("catHint").textCont
 $("addBtn").onclick=function(){
   var amt=parseFloat(amountEl.value);
   if(!amt||amt<=0){toast("Enter an amount");amountEl.focus();return;}
-  if(!descEl.value.trim()){toast("Add a description");descEl.focus();return;}
-  var e={id:Date.now()+"-"+Math.random().toString(36).slice(2,6),date:dateEl.value,desc:descEl.value.trim(),
-    amount:amt,kind:kind,cat:kind==="income"?"Income":catEl.value,synced:false};
-  entries.push(e);saveLS();
+  if(!descEl.value.trim()){toast("Add a short description");descEl.focus();return;}
+  entries.push({id:Date.now()+"-"+Math.random().toString(36).slice(2,6),date:dateEl.value,
+    desc:descEl.value.trim(),amount:amt,kind:kind,cat:kind==="income"?"Income":catEl.value,exported:false});
+  save();
   amountEl.value="";descEl.value="";catTouched=false;setKind("expense");$("catHint").textContent="auto";
   var dd=new Date(dateEl.value+"T00:00:00");view=new Date(dd.getFullYear(),dd.getMonth(),1);
   render();toast("Added");amountEl.focus();
-  if(signedIn()) pushOne(e).then(function(ok){if(ok){saveLS();render();}});
 };
 $("prevM").onclick=function(){view.setMonth(view.getMonth()-1);render();};
 $("nextM").onclick=function(){view.setMonth(view.getMonth()+1);render();};
-function del(id){entries=entries.filter(function(e){return e.id!==id;});saveLS();render();}
+function del(id){entries=entries.filter(function(e){return e.id!==id;});save();render();}
 
 function render(){
   $("monthLabel").textContent=MO[view.getMonth()]+" "+view.getFullYear();
   var mk=monthKey(view);
-  var mine=entries.filter(function(e){return (e.date||"").slice(0,7)===mk;}).sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:0;});
-  var inS=0,outS=0;mine.forEach(function(e){if(e.kind==="income")inS+=e.amount;else outS+=e.amount;});
-  $("sumIn").textContent=fmt(inS);$("sumOut").textContent=fmt(outS);$("sumNet").textContent=fmt(inS-outS);
+  var mine=entries.filter(function(e){return (e.date||"").slice(0,7)===mk;})
+                  .sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:0;});
+  var inSum=0,outSum=0;
+  mine.forEach(function(e){if(e.kind==="income")inSum+=e.amount;else outSum+=e.amount;});
+  $("sumIn").textContent=fmt(inSum);$("sumOut").textContent=fmt(outSum);$("sumNet").textContent=fmt(inSum-outSum);
   $("count").textContent=mine.length?(mine.length+" entries"):"";
   var list=$("list");list.innerHTML="";
   if(!mine.length)list.innerHTML='<div class="empty">Nothing yet this month.<br>Add your first entry above.</div>';
   var groups={};mine.forEach(function(e){(groups[e.date]=groups[e.date]||[]).push(e);});
   Object.keys(groups).sort().reverse().forEach(function(dk){
-    var d=new Date(dk+"T00:00:00"),g=document.createElement("div");g.className="daygroup";
+    var d=new Date(dk+"T00:00:00");var g=document.createElement("div");g.className="daygroup";
     var dayOut=groups[dk].reduce(function(s,e){return s+(e.kind==="income"?0:e.amount);},0);
     var lab=document.createElement("div");lab.className="daylabel";
     lab.innerHTML="<span>"+WD[d.getDay()]+" "+d.getDate()+" "+MO[d.getMonth()].slice(0,3)+"</span><span>"+(dayOut?("−"+fmt(dayOut)):"")+"</span>";
     g.appendChild(lab);
     groups[dk].forEach(function(e){
       var row=document.createElement("div");row.className="entry";var col=COLORS[e.cat]||"#64748b";
-      row.innerHTML='<span class="dot" style="background:'+col+'"></span><div class="body"><div class="desc">'+esc(e.desc)+
-        '</div><div class="meta">'+e.cat+(e.synced?' · synced':' · on phone')+'</div></div>'+
+      row.innerHTML='<span class="dot" style="background:'+col+'"></span>'+
+        '<div class="body"><div class="desc">'+escapeHtml(e.desc)+'</div>'+
+        '<div class="meta">'+e.cat+(e.exported?' · synced':'')+'</div></div>'+
         '<div class="amt '+(e.kind==="income"?"in":"out")+'">'+(e.kind==="income"?"+":"−")+fmt2(e.amount)+'</div>'+
-        '<button class="del">✕</button>';
+        '<button class="del" aria-label="Delete">✕</button>';
       row.querySelector(".del").onclick=function(){del(e.id);};g.appendChild(row);
     });
     list.appendChild(g);
   });
-  var newCount=entries.filter(function(e){return !e.synced;}).length,badge=$("newBadge");
+  var newCount=entries.filter(function(e){return !e.exported;}).length;
+  var badge=$("newBadge");
   if(newCount>0){badge.style.display="inline-block";badge.textContent=newCount;}else badge.style.display="none";
-  var dot=$("syncDot");
-  if(!signedIn()){dot.className="dotst off";}
-  else{dot.className=newCount>0?"dotst off":"dotst ok";}
 }
-function esc(s){return s.replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function escapeHtml(s){return s.replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
 
-/* ---------- Microsoft sign-in + Graph ---------- */
-var pca=null, account=null;
-function signedIn(){return !!account;}
-function cfgReady(){return CONFIG.clientId && CONFIG.clientId.indexOf("PASTE")<0;}
+function rowsTSV(list){return list.map(function(e){
+  return [e.date,e.desc,e.amount.toFixed(2),e.kind==="income"?"income":"expense"].join("\t");}).join("\n");}
+function csvEntry(list){return "Date,Description,Amount,In/Out\n"+list.map(function(e){
+  return [e.date,'"'+e.desc.replace(/"/g,'""')+'"',e.amount.toFixed(2),
+    e.kind==="income"?"income":"expense"].join(",");}).join("\n");}
+function csvAll(list){return "Date,Description,Amount,In/Out,Category\n"+list.map(function(e){
+  return [e.date,'"'+e.desc.replace(/"/g,'""')+'"',e.amount.toFixed(2),
+    e.kind==="income"?"income":"expense",e.cat].join(",");}).join("\n");}
 
-async function initAuth(){
-  if(!cfgReady()){
-    $("cfgWarn").style.display="block";
-    $("cfgWarn").textContent="Sync is off until you paste your Client ID into the file (see the setup steps). You can still add entries — they're saved on the phone.";
-    $("authBtn").style.display="none"; return;
+/* weekly send: share only NEW entries as a CSV file, mark synced on success */
+$("sendBtn").onclick=function(){
+  var neu=entries.filter(function(e){return !e.exported;});
+  if(!neu.length){toast("Nothing new to send");return;}
+  var csv=csvEntry(neu.slice().sort(function(a,b){return a.date<b.date?-1:1;}));
+  var fname="cash_new_"+iso(new Date())+".csv";
+  var file;try{file=new File([csv],fname,{type:"text/csv"});}catch(e){file=null;}
+  if(navigator.canShare&&file&&navigator.canShare({files:[file]})){
+    navigator.share({files:[file],title:"Cash entries",text:"New expense entries"}).then(function(){
+      neu.forEach(function(e){e.exported=true;});save();render();toast("Sent — "+neu.length+" new");
+    }).catch(function(){/* cancelled: leave unsynced */});
+  } else { // fallback: download the file
+    downloadBlob(csv,fname);
+    neu.forEach(function(e){e.exported=true;});save();render();
+    toast("Saved "+neu.length+" new — move the file to your laptop");
   }
-  try{
-    pca=new msal.PublicClientApplication({auth:{clientId:CONFIG.clientId,authority:CONFIG.authority,
-      redirectUri:location.origin+location.pathname},cache:{cacheLocation:"localStorage"}});
-    await pca.initialize();
-    var resp=await pca.handleRedirectPromise();
-    if(resp&&resp.account)pca.setActiveAccount(resp.account);
-    account=pca.getActiveAccount()||(pca.getAllAccounts()[0]||null);
-    if(account)pca.setActiveAccount(account);
-    updateAuthUI();
-    if(signedIn()){var n=entries.filter(function(e){return !e.synced;}).length;if(n)toast(n+" waiting to sync — tap Sync now");}
-  }catch(e){toast("Sign-in setup error");}
-}
-function updateAuthUI(){
-  if(signedIn()){$("whoTxt").innerHTML="<b>"+esc(account.username||"Signed in")+"</b>";$("authBtn").textContent="Sign out";}
-  else{$("whoTxt").textContent="Not signed in";$("authBtn").textContent="Sign in";}
-  render();
-}
-$("authBtn").onclick=function(){
-  if(!pca)return;
-  if(signedIn()){pca.logoutRedirect();}
-  else{pca.loginRedirect({scopes:["Files.ReadWrite"],prompt:"select_account"});}
 };
-async function getToken(){
-  var req={scopes:["Files.ReadWrite"],account:account};
-  try{var r=await pca.acquireTokenSilent(req);return r.accessToken;}
-  catch(e){pca.acquireTokenRedirect(req);throw e;}
-}
-async function pushOne(e){
-  if(!signedIn())return false;
-  try{
-    var token=await getToken();
-    var url="https://graph.microsoft.com/v1.0/me/drive/root:"+CONFIG.filePath+":/workbook/tables/"+encodeURIComponent(CONFIG.table)+"/rows/add";
-    var body={index:null,values:[[serial(e.date),e.desc,e.amount,e.kind==="income"?"income":"expense"]]};
-    var r=await fetch(url,{method:"POST",headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(body)});
-    if(!r.ok){var t=await r.text();toast("Sync error "+r.status);console.warn(t);return false;}
-    e.synced=true;return true;
-  }catch(err){return false;}
-}
-$("syncBtn").onclick=async function(){
-  if(!cfgReady()){toast("Add your Client ID to enable sync");return;}
-  if(!signedIn()){toast("Sign in first");return;}
-  var pending=entries.filter(function(e){return !e.synced;});
-  if(!pending.length){toast("All synced");return;}
-  toast("Syncing "+pending.length+"…");
-  var done=0;
-  for(var i=0;i<pending.length;i++){var ok=await pushOne(pending[i]);if(ok)done++;else break;}
-  saveLS();render();
-  toast(done+" synced"+(done<pending.length?" — some failed, try again":""));
+$("copyBtn").onclick=function(){
+  var neu=entries.filter(function(e){return !e.exported;});
+  if(!neu.length){toast("No new entries to copy");return;}
+  copyText(rowsTSV(neu.slice().sort(function(a,b){return a.date<b.date?-1:1;})),function(ok){
+    if(ok){neu.forEach(function(e){e.exported=true;});save();render();
+      toast(neu.length+" copied — paste into the Add tab");}
+    else toast("Copy failed — use Send instead");});
 };
 $("moreBtn").onclick=function(){
-  var neu=entries.filter(function(e){return !e.synced;}).length;
+  var neu=entries.filter(function(e){return !e.exported;}).length;
   var c=prompt("Cash — "+entries.length+" entries, "+neu+" not yet synced.\n\n"+
-    "1 = Download backup CSV\n2 = Mark all as synced (already in Excel)\n3 = Mark all as NOT synced (re-push)\n4 = Delete all phone data\n\nType a number:","");
-  if(c==="1"){var csv="Date,Description,Amount,In/Out,Category\n"+entries.slice().sort(function(a,b){return a.date<b.date?-1:1;}).map(function(e){
-      return [e.date,'"'+e.desc.replace(/"/g,'""')+'"',e.amount.toFixed(2),e.kind,e.cat].join(",");}).join("\n");
-    var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="cash_backup.csv";a.click();toast("Backup downloaded");}
-  else if(c==="2"){entries.forEach(function(e){e.synced=true;});saveLS();render();toast("All marked synced");}
-  else if(c==="3"){entries.forEach(function(e){e.synced=false;});saveLS();render();toast("All marked unsynced");}
-  else if(c==="4"){if(confirm("Delete ALL entries on this phone? (Anything already synced stays in your Excel.)")){entries=[];saveLS();render();toast("Cleared");}}
+    "1 = Download FULL backup CSV\n2 = Mark all as synced\n3 = Mark all as new (re-send everything)\n4 = Delete all data\n\nType a number:","");
+  if(c==="1"){downloadBlob(csvAll(entries.slice().sort(function(a,b){return a.date<b.date?-1:1;})),"cash_backup_"+iso(new Date())+".csv");toast("Backup downloaded");}
+  else if(c==="2"){entries.forEach(function(e){e.exported=true;});save();render();toast("All marked synced");}
+  else if(c==="3"){entries.forEach(function(e){e.exported=false;});save();render();toast("All marked new");}
+  else if(c==="4"){if(confirm("Delete ALL entries on this phone? Cannot be undone.")){entries=[];save();render();toast("Cleared");}}
 };
-var toastT;function toast(m){var t=$("toast");t.textContent=m;t.className="toast show";clearTimeout(toastT);toastT=setTimeout(function(){t.className="toast";},2100);}
+function downloadBlob(text,name){var b=new Blob([text],{type:"text/csv"});var a=document.createElement("a");
+  a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();a.remove();}
+function copyText(text,cb){
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(text).then(function(){cb(true);},fallback);
+  else fallback();
+  function fallback(){try{var ta=document.createElement("textarea");ta.value=text;ta.style.position="fixed";ta.style.opacity="0";
+    document.body.appendChild(ta);ta.focus();ta.select();var ok=document.execCommand("copy");ta.remove();cb(ok);}catch(e){cb(false);}}
+}
+var toastT;
+function toast(m){var t=$("toast");t.textContent=m;t.className="toast show";clearTimeout(toastT);toastT=setTimeout(function(){t.className="toast";},1900);}
 
-/* icon */
-(function(){try{var c=document.createElement("canvas");c.width=c.height=180;var x=c.getContext("2d");
-  var g=x.createLinearGradient(0,0,180,180);g.addColorStop(0,"#0f172a");g.addColorStop(1,"#1e293b");x.fillStyle=g;
-  var r=40;x.beginPath();x.moveTo(r,0);x.arcTo(180,0,180,180,r);x.arcTo(180,180,0,180,r);x.arcTo(0,180,0,0,r);x.arcTo(0,0,180,0,r);x.fill();
-  x.fillStyle="#6ee7b7";x.fillRect(46,96,16,24);x.fillStyle="#818cf8";x.fillRect(74,78,16,42);x.fillStyle="#fda4af";x.fillRect(102,60,16,60);
-  x.fillStyle="#fff";x.font="bold 70px -apple-system,Arial";x.textAlign="center";x.textBaseline="middle";x.fillText("$",90,52);
-  document.getElementById("touchIcon").href=c.toDataURL("image/png");}catch(e){}})();
+/* ---------- make it installable: generate icon + manifest ---------- */
+(function(){
+  function icon(size){
+    var c=document.createElement("canvas");c.width=c.height=size;var x=c.getContext("2d");
+    var g=x.createLinearGradient(0,0,size,size);g.addColorStop(0,"#0f172a");g.addColorStop(1,"#1e293b");
+    x.fillStyle=g;var r=size*0.22;
+    x.beginPath();x.moveTo(r,0);x.arcTo(size,0,size,size,r);x.arcTo(size,size,0,size,r);
+    x.arcTo(0,size,0,0,r);x.arcTo(0,0,size,0,r);x.closePath();x.fill();
+    // little bars + dollar motif
+    x.fillStyle="#6ee7b7";var bw=size*0.1,bx=size*0.24,by=size*0.66;
+    x.fillRect(bx,by-size*0.14,bw,size*0.14);
+    x.fillStyle="#818cf8";x.fillRect(bx+bw*1.5,by-size*0.24,bw,size*0.24);
+    x.fillStyle="#fda4af";x.fillRect(bx+bw*3,by-size*0.34,bw,size*0.34);
+    x.fillStyle="#fff";x.font="bold "+(size*0.4)+"px -apple-system,Arial";x.textAlign="center";x.textBaseline="middle";
+    x.fillText("$",size*0.5,size*0.34);
+    return c.toDataURL("image/png");
+  }
+  try{
+    var i180=icon(180),i512=icon(512);
+    document.getElementById("touchIcon").href=i180;
+    var man={name:"Cash Capture",short_name:"Cash",description:"Log expenses and income on the go",
+      display:"standalone",background_color:"#f6f7f9",theme_color:"#0f172a",
+      start_url:location.href.split("#")[0],scope:".",
+      icons:[{src:i180,sizes:"180x180",type:"image/png"},{src:i512,sizes:"512x512",type:"image/png",purpose:"any maskable"}]};
+    var burl=URL.createObjectURL(new Blob([JSON.stringify(man)],{type:"application/manifest+json"}));
+    document.getElementById("manifest").href=burl;
+  }catch(e){}
+})();
 
-setKind("expense");render();initAuth();
+/* Android install prompt */
+var deferredPrompt=null;
+window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();deferredPrompt=e;
+  var chip=$("installChip");chip.style.display="inline-block";
+  chip.onclick=function(){chip.style.display="none";deferredPrompt.prompt();deferredPrompt=null;};});
+
+setKind("expense");
+render();
 </script>
 </body>
 </html>
